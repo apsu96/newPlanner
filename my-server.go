@@ -7,7 +7,7 @@ import (
 	"time"
     "log"
     "net/http"
-    "errors"
+    // "errors"
     "os"
 	
     _ "github.com/mattn/go-sqlite3"
@@ -182,7 +182,10 @@ func addRegistrationCard(u User) string {
     stmt, err := db.Prepare("INSERT INTO users (userName, password) values(?,?)")
     checkErr(err)
     res, err := stmt.Exec(u.Username, u.Password)
-    checkErr(err)
+    if err != nil {
+        return "failed";
+    }
+    // checkErr(err)
 
     fmt.Println(res.RowsAffected())
 
@@ -217,9 +220,12 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
   
     db, err := sql.Open("sqlite3", "todo")
     checkErr(err)
+    fmt.Println("Connected to DB...")
 
     res, err := db.Query("SELECT id, userName, password FROM users WHERE userName = '" + u.Username + "'")
-    checkErr(err)
+    if err != nil {
+        json.NewEncoder(w).Encode("failed");
+    }
 
     dbusercard := User{}
     var dbid int
@@ -228,10 +234,11 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
         res.Scan(&dbid, &dbusercard.Username, &dbusercard.Password)
     }
 
-    fmt.Println(&dbusercard.Username, &dbusercard.Password)
+    fmt.Println(&dbusercard.Username, &dbusercard.Password, "ghhh")
     res.Close()
 
     if dbusercard.Username == u.Username && dbusercard.Password == u.Password {
+        fmt.Println("working")
         validToken, err := GenerateGWT(dbid)
         fmt.Println(validToken)
         checkErr(err)
@@ -239,41 +246,43 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
             log.Println(err)
         }
     } else {
-        log.Fatal(err)
-    }
-
-    
+        fmt.Println("not correct")
+        // log.Fatal(err)
+        if err := json.NewEncoder(w).Encode("failed"); err != nil {
+            log.Println(err)
+        }       
+    }   
 }
 }
 
 
-func checkLogin(u User) (string, error) {
+// func checkLogin(u User) (string, error) {
 
-    db, err := sql.Open("sqlite3", "todo")
-    checkErr(err)
+//     db, err := sql.Open("sqlite3", "todo")
+//     checkErr(err)
 
-    res, err := db.Query("SELECT id, userName, password FROM users WHERE userName = '" + u.Username + "'")
-    checkErr(err)
+//     res, err := db.Query("SELECT id, userName, password FROM users WHERE userName = '" + u.Username + "'")
+//     checkErr(err)
 
-    dbusercard := User{}
-    var id int
+//     dbusercard := User{}
+//     var id int
 
-    for res.Next() {
-        res.Scan(&id, &dbusercard.Username, &dbusercard.Password)
-    }
+//     for res.Next() {
+//         res.Scan(&id, &dbusercard.Username, &dbusercard.Password)
+//     }
 
-    res.Close()
+//     res.Close()
 
-    if dbusercard.Username == u.Username || dbusercard.Password == u.Password {
-        validToken, err := GenerateGWT(id)
-        fmt.Println(validToken)
-        checkErr(err)
-        return validToken, nil
-    } else {
-        fmt.Println("Not correct!")
-        return "", errors.New("not valid login and (or) password")
-    }
-}
+//     if dbusercard.Username == u.Username || dbusercard.Password == u.Password {
+//         validToken, err := GenerateGWT(id)
+//         fmt.Println(validToken)
+//         checkErr(err)
+//         return validToken, nil
+//     } else {
+//         fmt.Println("Not correct!")
+//         return "", errors.New("not valid login and (or) password")
+//     }
+// }
 
 func GenerateGWT(id int) (string, error){
     var err error
