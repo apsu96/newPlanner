@@ -18,7 +18,7 @@ Backend - Go, SQLite.
 
 **Data Storage**:
 
-Data can be saved either on server or in local storage upon a user’s option.
+Data can be saved either on server or in local storage at a user’s choice.
 
 
 
